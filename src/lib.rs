@@ -38,6 +38,10 @@ use std::ffi::CString;
 use std::mem;
 use std::path::Path;
 use std::ptr;
+#[cfg(windows)]
+use libloading::os::windows::{Symbol, Library};
+#[cfg(unix)]
+use libloading::os::unix::{Symbol, Library};
 
 trait CkFrom<T> {
     fn from(_: T) -> Self;
@@ -88,7 +92,7 @@ fn label_from_str(label: &str) -> [CK_UTF8CHAR; 32] {
 
 #[derive(Debug)]
 pub struct Ctx {
-    lib: libloading::Library,
+    lib: Library,
     _is_initialized: bool,
     version: CK_VERSION,
     C_Initialize: C_Initialize,
@@ -163,15 +167,29 @@ pub struct Ctx {
 }
 
 impl Ctx {
+    pub fn this() -> Result<Ctx, Error>
+    {
+        Ctx::_new(None::<String>)
+    }
     pub fn new<P>(filename: P) -> Result<Ctx, Error>
+        where
+            P: AsRef<Path>,
+    {
+        Ctx::_new(Some(filename))
+    }
+    pub fn _new<P>(filename: Option<P>) -> Result<Ctx, Error>
     where
         P: AsRef<Path>,
     {
         unsafe {
-            let lib = libloading::Library::new(filename.as_ref())?;
+            let lib = match filename {
+                Some(filename) => Library::new(filename.as_ref())?,
+                None => Library::this()
+            };
+
             let mut list = mem::MaybeUninit::uninit();
             {
-                let func: libloading::Symbol<
+                let func: Symbol<
                     unsafe extern "C" fn(CK_FUNCTION_LIST_PTR_PTR) -> CK_RV,
                 > = lib.get(b"C_GetFunctionList")?;
                 match func(list.as_mut_ptr()) {
