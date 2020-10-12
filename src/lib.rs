@@ -92,7 +92,7 @@ fn label_from_str(label: &str) -> [CK_UTF8CHAR; 32] {
 
 #[derive(Debug)]
 pub struct Ctx {
-    lib: Library,
+    lib: Option<Library>,
     _is_initialized: bool,
     version: CK_VERSION,
     C_Initialize: C_Initialize,
@@ -166,10 +166,244 @@ pub struct Ctx {
     C_WaitForSlotEvent: Option<C_WaitForSlotEvent>,
 }
 
+#[cfg(target_os = "ios")]
+extern "C" {
+    fn C_GetFunctionList(error: CK_FUNCTION_LIST_PTR_PTR) -> CK_RV;
+}
+
 impl Ctx {
+    #[cfg(not(target_os = "ios"))]
     pub fn this() -> Result<Ctx, Error>
     {
         Ctx::_new(None::<String>)
+    }
+    #[cfg(target_os = "ios")]
+    pub fn this() -> Result<Ctx, Error>
+    {
+
+        unsafe {
+
+            let mut list = mem::MaybeUninit::uninit();
+            {
+                match C_GetFunctionList(list.as_mut_ptr()) {
+                    CKR_OK => (),
+                    err => return Err(Error::Pkcs11(err)),
+                }
+            }
+
+            let list_ptr = *list.as_ptr();
+
+            Ok(Ctx {
+                lib: None,
+                _is_initialized: false,
+                version: (*list_ptr).version,
+                C_Initialize: (*list_ptr)
+                    .C_Initialize
+                    .ok_or(Error::Module("C_Initialize function not found"))?,
+                C_Finalize: (*list_ptr)
+                    .C_Finalize
+                    .ok_or(Error::Module("C_Finalize function not found"))?,
+                C_GetInfo: (*list_ptr)
+                    .C_GetInfo
+                    .ok_or(Error::Module("C_GetInfo function not found"))?,
+                C_GetFunctionList: (*list_ptr)
+                    .C_GetFunctionList
+                    .ok_or(Error::Module("C_GetFunctionList function not found"))?,
+                C_GetSlotList: (*list_ptr)
+                    .C_GetSlotList
+                    .ok_or(Error::Module("C_GetSlotList function not found"))?,
+                C_GetSlotInfo: (*list_ptr)
+                    .C_GetSlotInfo
+                    .ok_or(Error::Module("C_GetSlotInfo function not found"))?,
+                C_GetTokenInfo: (*list_ptr)
+                    .C_GetTokenInfo
+                    .ok_or(Error::Module("C_GetTokenInfo function not found"))?,
+                C_GetMechanismList: (*list_ptr)
+                    .C_GetMechanismList
+                    .ok_or(Error::Module("C_GetMechanismList function not found"))?,
+                C_GetMechanismInfo: (*list_ptr)
+                    .C_GetMechanismInfo
+                    .ok_or(Error::Module("C_GetMechanismInfo function not found"))?,
+                C_InitToken: (*list_ptr)
+                    .C_InitToken
+                    .ok_or(Error::Module("C_InitToken function not found"))?,
+                C_InitPIN: (*list_ptr)
+                    .C_InitPIN
+                    .ok_or(Error::Module("C_InitPIN function not found"))?,
+                C_SetPIN: (*list_ptr)
+                    .C_SetPIN
+                    .ok_or(Error::Module("C_SetPIN function not found"))?,
+                C_OpenSession: (*list_ptr)
+                    .C_OpenSession
+                    .ok_or(Error::Module("C_OpenSession function not found"))?,
+                C_CloseSession: (*list_ptr)
+                    .C_CloseSession
+                    .ok_or(Error::Module("C_CloseSession function not found"))?,
+                C_CloseAllSessions: (*list_ptr)
+                    .C_CloseAllSessions
+                    .ok_or(Error::Module("C_CloseAllSessions function not found"))?,
+                C_GetSessionInfo: (*list_ptr)
+                    .C_GetSessionInfo
+                    .ok_or(Error::Module("C_GetSessionInfo function not found"))?,
+                C_GetOperationState: (*list_ptr)
+                    .C_GetOperationState
+                    .ok_or(Error::Module("C_GetOperationState function not found"))?,
+                C_SetOperationState: (*list_ptr)
+                    .C_SetOperationState
+                    .ok_or(Error::Module("C_SetOperationState function not found"))?,
+                C_Login: (*list_ptr)
+                    .C_Login
+                    .ok_or(Error::Module("C_Login function not found"))?,
+                C_Logout: (*list_ptr)
+                    .C_Logout
+                    .ok_or(Error::Module("C_Logout function not found"))?,
+                C_CreateObject: (*list_ptr)
+                    .C_CreateObject
+                    .ok_or(Error::Module("C_CreateObject function not found"))?,
+                C_CopyObject: (*list_ptr)
+                    .C_CopyObject
+                    .ok_or(Error::Module("C_CopyObject function not found"))?,
+                C_DestroyObject: (*list_ptr)
+                    .C_DestroyObject
+                    .ok_or(Error::Module("C_DestroyObject function not found"))?,
+                C_GetObjectSize: (*list_ptr)
+                    .C_GetObjectSize
+                    .ok_or(Error::Module("C_GetObjectSize function not found"))?,
+                C_GetAttributeValue: (*list_ptr)
+                    .C_GetAttributeValue
+                    .ok_or(Error::Module("C_GetAttributeValue function not found"))?,
+                C_SetAttributeValue: (*list_ptr)
+                    .C_SetAttributeValue
+                    .ok_or(Error::Module("C_SetAttributeValue function not found"))?,
+                C_FindObjectsInit: (*list_ptr)
+                    .C_FindObjectsInit
+                    .ok_or(Error::Module("C_FindObjectsInit function not found"))?,
+                C_FindObjects: (*list_ptr)
+                    .C_FindObjects
+                    .ok_or(Error::Module("C_FindObjects function not found"))?,
+                C_FindObjectsFinal: (*list_ptr)
+                    .C_FindObjectsFinal
+                    .ok_or(Error::Module("C_FindObjectsFinal function not found"))?,
+                C_EncryptInit: (*list_ptr)
+                    .C_EncryptInit
+                    .ok_or(Error::Module("C_EncryptInit function not found"))?,
+                C_Encrypt: (*list_ptr)
+                    .C_Encrypt
+                    .ok_or(Error::Module("C_Encrypt function not found"))?,
+                C_EncryptUpdate: (*list_ptr)
+                    .C_EncryptUpdate
+                    .ok_or(Error::Module("C_EncryptUpdate function not found"))?,
+                C_EncryptFinal: (*list_ptr)
+                    .C_EncryptFinal
+                    .ok_or(Error::Module("C_EncryptFinal function not found"))?,
+                C_DecryptInit: (*list_ptr)
+                    .C_DecryptInit
+                    .ok_or(Error::Module("C_DecryptInit function not found"))?,
+                C_Decrypt: (*list_ptr)
+                    .C_Decrypt
+                    .ok_or(Error::Module("C_Decrypt function not found"))?,
+                C_DecryptUpdate: (*list_ptr)
+                    .C_DecryptUpdate
+                    .ok_or(Error::Module("C_DecryptUpdate function not found"))?,
+                C_DecryptFinal: (*list_ptr)
+                    .C_DecryptFinal
+                    .ok_or(Error::Module("C_DecryptFinal function not found"))?,
+                C_DigestInit: (*list_ptr)
+                    .C_DigestInit
+                    .ok_or(Error::Module("C_DigestInit function not found"))?,
+                C_Digest: (*list_ptr)
+                    .C_Digest
+                    .ok_or(Error::Module("C_Digest function not found"))?,
+                C_DigestUpdate: (*list_ptr)
+                    .C_DigestUpdate
+                    .ok_or(Error::Module("C_DigestUpdate function not found"))?,
+                C_DigestKey: (*list_ptr)
+                    .C_DigestKey
+                    .ok_or(Error::Module("C_DigestKey function not found"))?,
+                C_DigestFinal: (*list_ptr)
+                    .C_DigestFinal
+                    .ok_or(Error::Module("C_DigestFinal function not found"))?,
+                C_SignInit: (*list_ptr)
+                    .C_SignInit
+                    .ok_or(Error::Module("C_SignInit function not found"))?,
+                C_Sign: (*list_ptr)
+                    .C_Sign
+                    .ok_or(Error::Module("C_Sign function not found"))?,
+                C_SignUpdate: (*list_ptr)
+                    .C_SignUpdate
+                    .ok_or(Error::Module("C_SignUpdate function not found"))?,
+                C_SignFinal: (*list_ptr)
+                    .C_SignFinal
+                    .ok_or(Error::Module("C_SignFinal function not found"))?,
+                C_SignRecoverInit: (*list_ptr)
+                    .C_SignRecoverInit
+                    .ok_or(Error::Module("C_SignRecoverInit function not found"))?,
+                C_SignRecover: (*list_ptr)
+                    .C_SignRecover
+                    .ok_or(Error::Module("C_SignRecover function not found"))?,
+                C_VerifyInit: (*list_ptr)
+                    .C_VerifyInit
+                    .ok_or(Error::Module("C_VerifyInit function not found"))?,
+                C_Verify: (*list_ptr)
+                    .C_Verify
+                    .ok_or(Error::Module("C_Verify function not found"))?,
+                C_VerifyUpdate: (*list_ptr)
+                    .C_VerifyUpdate
+                    .ok_or(Error::Module("C_VerifyUpdate function not found"))?,
+                C_VerifyFinal: (*list_ptr)
+                    .C_VerifyFinal
+                    .ok_or(Error::Module("C_VerifyFinal function not found"))?,
+                C_VerifyRecoverInit: (*list_ptr)
+                    .C_VerifyRecoverInit
+                    .ok_or(Error::Module("C_VerifyRecoverInit function not found"))?,
+                C_VerifyRecover: (*list_ptr)
+                    .C_VerifyRecover
+                    .ok_or(Error::Module("C_VerifyRecover function not found"))?,
+                C_DigestEncryptUpdate: (*list_ptr)
+                    .C_DigestEncryptUpdate
+                    .ok_or(Error::Module("C_DigestEncryptUpdate function not found"))?,
+                C_DecryptDigestUpdate: (*list_ptr)
+                    .C_DecryptDigestUpdate
+                    .ok_or(Error::Module("C_DecryptDigestUpdate function not found"))?,
+                C_SignEncryptUpdate: (*list_ptr)
+                    .C_SignEncryptUpdate
+                    .ok_or(Error::Module("C_SignEncryptUpdate function not found"))?,
+                C_DecryptVerifyUpdate: (*list_ptr)
+                    .C_DecryptVerifyUpdate
+                    .ok_or(Error::Module("C_DecryptVerifyUpdate function not found"))?,
+                C_GenerateKey: (*list_ptr)
+                    .C_GenerateKey
+                    .ok_or(Error::Module("C_GenerateKey function not found"))?,
+                C_GenerateKeyPair: (*list_ptr)
+                    .C_GenerateKeyPair
+                    .ok_or(Error::Module("C_GenerateKeyPair function not found"))?,
+                C_WrapKey: (*list_ptr)
+                    .C_WrapKey
+                    .ok_or(Error::Module("C_WrapKey function not found"))?,
+                C_UnwrapKey: (*list_ptr)
+                    .C_UnwrapKey
+                    .ok_or(Error::Module("C_UnwrapKey function not found"))?,
+                C_DeriveKey: (*list_ptr)
+                    .C_DeriveKey
+                    .ok_or(Error::Module("C_DeriveKey function not found"))?,
+                C_SeedRandom: (*list_ptr)
+                    .C_SeedRandom
+                    .ok_or(Error::Module("C_SeedRandom function not found"))?,
+                C_GenerateRandom: (*list_ptr)
+                    .C_GenerateRandom
+                    .ok_or(Error::Module("C_GenerateRandom function not found"))?,
+                C_GetFunctionStatus: (*list_ptr)
+                    .C_GetFunctionStatus
+                    .ok_or(Error::Module("C_GetFunctionStatus function not found"))?,
+                C_CancelFunction: (*list_ptr)
+                    .C_CancelFunction
+                    .ok_or(Error::Module("C_CancelFunction function not found"))?,
+                // Functions added in for Cryptoki Version 2.01 or later:
+                // to be compatible with PKCS#11 2.00 we do not fail during initialization
+                // but when the function will be called.
+                C_WaitForSlotEvent: (*list_ptr).C_WaitForSlotEvent,
+            })
+        }
     }
     pub fn new<P>(filename: P) -> Result<Ctx, Error>
         where
@@ -201,7 +435,7 @@ impl Ctx {
             let list_ptr = *list.as_ptr();
 
             Ok(Ctx {
-                lib,
+                lib: Some(lib),
                 _is_initialized: false,
                 version: (*list_ptr).version,
                 C_Initialize: (*list_ptr)
