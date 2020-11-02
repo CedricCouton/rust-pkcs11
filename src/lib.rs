@@ -411,6 +411,18 @@ impl Ctx {
     {
         Ctx::_new(Some(filename))
     }
+
+
+    #[cfg(unix)]
+    pub (crate) fn library_this() -> Result<Library, Error> {
+        Ok(Library::this())
+    }
+
+    #[cfg(windows)]
+    pub (crate) fn library_this() -> Result<Library, Error> {
+        Ok(Library::this()?)
+    }
+
     pub fn _new<P>(filename: Option<P>) -> Result<Ctx, Error>
     where
         P: AsRef<Path>,
@@ -418,7 +430,7 @@ impl Ctx {
         unsafe {
             let lib = match filename {
                 Some(filename) => Library::new(filename.as_ref())?,
-                None => Library::this()
+                None => Ctx::library_this()?
             };
 
             let mut list = mem::MaybeUninit::uninit();
